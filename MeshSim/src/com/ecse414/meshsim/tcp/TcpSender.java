@@ -15,6 +15,8 @@ public class TcpSender {
 
 		PrintWriter out = null;
 
+		System.out.println("BYTS:"+new String(data));
+		
 		try {
 			InetAddress serverAddr = InetAddress.getByName(ip);
 			tcpSocket = new Socket(serverAddr, port);

@@ -22,7 +22,7 @@ public class DataPacket implements Packet {
 	
 	@Override 
 	public String toString() {
-		return this.getType() + Constants.BRK +
+		return "" + this.getType() + Constants.BRK +
 				sourceAddr + Constants.BRK +
 				destAddr + Constants.BRK +
 				data;

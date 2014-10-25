@@ -54,26 +54,18 @@ public class Reciever implements Runnable {
 			this.clientSocket = clientSocket;
 			System.out.println("Handling packet bound to local port " + this.clientSocket.getLocalPort());
 			try {
-
-				//this.input = new BufferedReader(new InputStreamReader(
-				//		this.clientSocket.getInputStream()));
 				InputStream in = this.clientSocket.getInputStream();
-				in.read(bytes);
-				
-				
+				in.read(bytes);				
 			} catch (IOException e) {
 				e.printStackTrace();
 			}
 		}
 
 		public void run() {
-			
 			String fullStr =  new String(bytes);
-			//String pkt_line = getNextLine();
 			System.err.println("PacketHandlerThread | fullStr=" + fullStr);	
 			
 			String[] str1 = fullStr.split(String.valueOf(Constants.BRK), 2);
-			
 			String pkt_line = str1[0];
 			
 			if (pkt_line == null) {
@@ -85,7 +77,7 @@ public class Reciever implements Runnable {
 			// Determine the type of packet received
 			switch (pkt_type) {
 				case (Constants.PKT_DATA):
-					//handleDataPacket(str1[1]);
+					handleDataPacket(str1[1]);
 					break; 
 				default: 
 					System.err.println("PacketHandlerThread | Invalid pkt_type.");
@@ -93,16 +85,12 @@ public class Reciever implements Runnable {
 			}
 		}
 			
-		//private void handleDataPacket(String str) {
-			//getNextLine(str); // srcAddr
-			//getNextLine(str); // destAddr
-			//updateConversationHandler.post(new updateUIThread("", getNextLine(str)));
-		//}
-		
-		//private String getNextLine(String str) {
-			//return fullStr.split(String.valueOf(Constants.BRK), 2)
-		//}
-		
+		private void handleDataPacket(String str) {
+			str = str.split(String.valueOf(Constants.BRK), 2)[1]; // cutting srcAddr
+			String data = str.split(String.valueOf(Constants.BRK), 2)[1]; // cutting destAddr
+			updateConversationHandler.post(new updateUIThread("", data));
+		}
+
 	}
 
 	

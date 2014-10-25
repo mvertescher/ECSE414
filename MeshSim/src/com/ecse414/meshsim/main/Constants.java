@@ -10,7 +10,7 @@ public class Constants {
 	/**
 	 * Break character used to separate data fields
 	 */
-	public static final char BRK = 0x0A;
+	public static final char BRK = '\n';//0x0A;
 	
 	/**
 	 * Packet containing user data
