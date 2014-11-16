@@ -20,10 +20,10 @@ public class LocalConfig {
 		MeshNode node2 = new MeshNode(AVDConstants.AVD2_ID, "AVD2", AVDConstants.AVD2_SERVER_PORT);
 		MeshNode node3 = new MeshNode(AVDConstants.AVD3_ID, "AVD3", AVDConstants.AVD3_SERVER_PORT);
 		
-		node1.getNeighbors().add(node2);
-		node2.getNeighbors().add(node1);
-		node2.getNeighbors().add(node3);
-		node3.getNeighbors().add(node2);
+//		node1.getNeighbors().add(node2);
+//		node2.getNeighbors().add(node1);
+//		node2.getNeighbors().add(node3);
+//		node3.getNeighbors().add(node2);
 		
 		if (AVDConstants.AVD1_ID.equals(androidId)) {
 			rootNode = node1;

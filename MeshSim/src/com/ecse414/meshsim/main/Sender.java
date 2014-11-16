@@ -29,6 +29,8 @@ public class Sender implements Runnable {
 		TcpSender packetSender = new TcpSender();
 		while (true) {
 			
+			// A spin wait is super resource heavy
+			// TODO: not this
 			while (ccl.isEmpty());			
 			
 			Packet p = ccl.remove();
