@@ -4,6 +4,9 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.net.ServerSocket;
 import java.net.Socket;
+import java.util.concurrent.ConcurrentLinkedQueue;
+
+import com.ecse414.meshsim.tcp.TcpReciever;
 
 import android.os.Handler;
 import android.widget.TextView;
@@ -11,7 +14,7 @@ import android.widget.TextView;
 public class Reciever implements Runnable {
 
 	private MeshNode root;
-	private ServerSocket serverSocket;
+	//private ServerSocket serverSocket;
 
 	Handler updateConversationHandler;
 	TextView textView;
@@ -24,74 +27,61 @@ public class Reciever implements Runnable {
 	}
 	
 	public void run() {
-		Socket socket = null;
-		try {
-			serverSocket = new ServerSocket(root.getPort());
-		} catch (IOException e) {
-			System.err.println("Server socket on port " + root.getPort() + " could not be created. ");
-			e.printStackTrace();
-		}
-		while (!Thread.currentThread().isInterrupted()) {		
-			try {
-				socket = serverSocket.accept();
-				System.err.println("Server | connection accepted, handling communication");
-				ConnectionHandlerThread connThread = new ConnectionHandlerThread(socket);
-				new Thread(connThread).start();
-			} catch (IOException e) {
-				e.printStackTrace();
+		ConcurrentLinkedQueue<Socket> socketQueue = new ConcurrentLinkedQueue<Socket>();
+		
+		// Start the TcpReciver 
+		new Thread(new TcpReciever(root.getPort(), socketQueue)).start();
+		
+		byte[] bytes = new byte[1024];
+		Socket socket;
+		
+		while (true) {
+			while (socketQueue.isEmpty()) {
+				Thread.yield();
 			}
-		}
-	}
-
-	class ConnectionHandlerThread implements Runnable {
-
-		private Socket clientSocket;
-		//private BufferedReader input;
-		private byte[] bytes = new byte[1024];
-		
-		
-		public ConnectionHandlerThread(Socket clientSocket) {
-			this.clientSocket = clientSocket;
-			System.out.println("Handling packet bound to local port " + this.clientSocket.getLocalPort());
+			
+			socket = socketQueue.remove();
 			try {
-				InputStream in = this.clientSocket.getInputStream();
+				InputStream in = socket.getInputStream();
 				in.read(bytes);				
 			} catch (IOException e) {
 				e.printStackTrace();
 			}
+			this.processBytes(bytes);		
 		}
-
-		public void run() {
-			String fullStr =  new String(bytes);
-			System.err.println("PacketHandlerThread | fullStr=" + fullStr);	
-			
-			String[] str1 = fullStr.split(String.valueOf(Constants.BRK), 2);
-			String pkt_line = str1[0];
-			
-			if (pkt_line == null) {
-				System.err.println("PacketHandlerThread | pkt_line == null.");
-			}
-				
-			byte pkt_type = Byte.parseByte(pkt_line);
-				
-			// Determine the type of packet received
-			switch (pkt_type) {
-				case (Constants.PKT_DATA):
-					handleDataPacket(str1[1]);
-					break; 
-				default: 
-					System.err.println("PacketHandlerThread | Invalid pkt_type.");
-					break; 
-			}
-		}
-			
-		private void handleDataPacket(String str) {
-			str = str.split(String.valueOf(Constants.BRK), 2)[1]; // cutting srcAddr
-			String data = str.split(String.valueOf(Constants.BRK), 2)[1]; // cutting destAddr
-			updateConversationHandler.post(new updateUIThread("", data));
-		}
-
 	}
+	
+	private void processBytes(byte[] bytes) {
+		String fullStr =  new String(bytes);
+		System.err.println("PacketHandlerThread | fullStr=" + fullStr);	
+		
+		String[] str1 = fullStr.split(String.valueOf(Constants.BRK), 2);
+		String pkt_line = str1[0];
+		
+		if (pkt_line == null) {
+			System.err.println("PacketHandlerThread | pkt_line == null.");
+		}
+			
+		byte pkt_type = Byte.parseByte(pkt_line);
+			
+		// Determine the type of packet received
+		switch (pkt_type) {
+			case (Constants.PKT_DATA):
+				handleDataPacket(str1[1]);
+				break; 
+			default: 
+				System.err.println("PacketHandlerThread | Invalid pkt_type.");
+				break; 
+		}
+		
+	}
+	
+	private void handleDataPacket(String str) {
+		str = str.split(String.valueOf(Constants.BRK), 2)[1]; // cutting srcAddr
+		String data = str.split(String.valueOf(Constants.BRK), 2)[1]; // cutting destAddr
+		updateConversationHandler.post(new updateUIThread("", data));
+	}
+	
 
 	
 	class updateUIThread implements Runnable {

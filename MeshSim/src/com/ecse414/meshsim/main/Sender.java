@@ -31,7 +31,9 @@ public class Sender implements Runnable {
 			
 			// A spin wait is super resource heavy
 			// TODO: not this
-			while (ccl.isEmpty());			
+			while (ccl.isEmpty()) {
+				Thread.yield();
+			}
 			
 			Packet p = ccl.remove();
 			

@@ -1,6 +1,5 @@
 
 public class Node {
-
 	public String id;
 	public int receivePort;
 	public String ip;

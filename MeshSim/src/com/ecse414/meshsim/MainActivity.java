@@ -33,6 +33,7 @@ import android.os.AsyncTask;
 import android.os.Bundle;
 import android.os.Handler;
 import android.provider.Settings.Secure;
+import android.text.method.ScrollingMovementMethod;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
@@ -50,8 +51,9 @@ public class MainActivity extends Activity {
 	protected void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
 		setContentView(R.layout.activity_main);
-
+ 
 		text = (TextView) findViewById(R.id.text2);
+		text.setMovementMethod(new ScrollingMovementMethod());
 
 		String androidId = Secure.getString(this.getContentResolver(), Secure.ANDROID_ID);
 		text.setText(text.getText() + "ANDROID_ID = " + androidId + "\n");
