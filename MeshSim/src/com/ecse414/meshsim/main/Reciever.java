@@ -6,6 +6,9 @@ import java.net.ServerSocket;
 import java.net.Socket;
 import java.util.concurrent.ConcurrentLinkedQueue;
 
+import com.ecse414.meshsim.packet.DataPacket;
+import com.ecse414.meshsim.packet.HelloPacket;
+import com.ecse414.meshsim.router.RouteTable;
 import com.ecse414.meshsim.tcp.TcpReciever;
 
 import android.os.Handler;
@@ -14,14 +17,16 @@ import android.widget.TextView;
 public class Reciever implements Runnable {
 
 	private MeshNode root;
-	//private ServerSocket serverSocket;
+	private RouteTable routeTable;
+	private Sender sender;
 
 	Handler updateConversationHandler;
 	TextView textView;
 	
-	
-	public Reciever(MeshNode root, Handler handler, TextView textView) {
+	public Reciever(MeshNode root, RouteTable routeTable, Sender sender, Handler handler, TextView textView) {
 		this.root = root;
+		this.routeTable = routeTable;
+		this.sender = sender; 
 		this.updateConversationHandler = handler;
 		this.textView = textView;
 	}
@@ -55,19 +60,27 @@ public class Reciever implements Runnable {
 		String fullStr =  new String(bytes);
 		System.err.println("PacketHandlerThread | fullStr=" + fullStr);	
 		
-		String[] str1 = fullStr.split(String.valueOf(Constants.BRK), 2);
-		String pkt_line = str1[0];
+		//String[] str1 = fullStr.split(String.valueOf(Constants.BRK), 2);
+		//String pkt_line = str1[0];
+		//String pkt_data = str1[1];
 		
-		if (pkt_line == null) {
-			System.err.println("PacketHandlerThread | pkt_line == null.");
-		}
+		
+		//if (pkt_line == null) {
+		//	System.err.println("PacketHandlerThread | pkt_line == null.");
+		//}
 			
-		byte pkt_type = Byte.parseByte(pkt_line);
+		//byte pkt_type = Byte.parseByte(pkt_line);
 			
+		byte pkt_type = (byte) (bytes[0] - 48);
+		System.out.println("Pkt type =(" + pkt_type + ")");
+		
 		// Determine the type of packet received
 		switch (pkt_type) {
+			case (Constants.PKT_HELLO):
+				handleHelloPacket(new HelloPacket(bytes));
+				break;
 			case (Constants.PKT_DATA):
-				handleDataPacket(str1[1]);
+				handleDataPacket(new DataPacket(bytes));
 				break; 
 			default: 
 				System.err.println("PacketHandlerThread | Invalid pkt_type.");
@@ -76,11 +89,36 @@ public class Reciever implements Runnable {
 		
 	}
 	
-	private void handleDataPacket(String str) {
-		str = str.split(String.valueOf(Constants.BRK), 2)[1]; // cutting srcAddr
-		String data = str.split(String.valueOf(Constants.BRK), 2)[1]; // cutting destAddr
-		updateConversationHandler.post(new updateUIThread("", data));
+	private void handleHelloPacket(HelloPacket helloPacket) {
+		// Received a hello packet -> update routing table
+		updateConversationHandler.post(new updateUIThread("", "HPKT RECV from " + helloPacket.getSourceAddress()));
 	}
+
+	private void handleDataPacket(DataPacket dataPacket) {
+		// If the packet is not meant for this node, forward
+		if ((Constants.LOCALHOST + ":" + root.getPort()).equals(dataPacket.getDestinationAddress())) {
+			this.sender.queuePacket(new DataPacket(dataPacket.getSourceAddress(), 
+					dataPacket.getDestinationAddress(), 
+					dataPacket.getData()));
+		} else {
+			updateConversationHandler.post(new updateUIThread("", dataPacket.getData()));
+		}
+	}
+
+	/*private void handleDataPacket(String str) {
+		String[] srcSplit = str.split(String.valueOf(Constants.BRK), 2); // cutting srcAddr
+		String srcAddr = srcSplit[0];
+		String[] destSplit = srcSplit[1].split(String.valueOf(Constants.BRK), 2); // cutting destAddr
+		String destAddr = destSplit[0];
+		String data = destSplit[1];
+		
+		// If the packet is not meant for this node, forward
+		if ((Constants.LOCALHOST + ":" + root.getPort()).equals(destAddr)) {
+			this.sender.queuePacket(new DataPacket(srcAddr,destAddr,data));
+		} else {
+			updateConversationHandler.post(new updateUIThread("", data));
+		}
+	}*/
 	
 
 	

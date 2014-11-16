@@ -25,6 +25,7 @@ import com.ecse414.meshsim.main.MeshNode;
 import com.ecse414.meshsim.main.Reciever;
 import com.ecse414.meshsim.main.Sender;
 import com.ecse414.meshsim.packet.DataPacket;
+import com.ecse414.meshsim.router.RouteTable;
 import com.ecse414.meshsim.setup.LocalConfig;
 import com.example.meshsim.R;
 
@@ -60,7 +61,7 @@ public class MainActivity extends Activity {
 		
 		//Always listen on localport 5001
 		// TODO: this should be a config
-		root = new MeshNode(androidId, androidId, Constants.LOCALHOST + ":5001");
+		root = new MeshNode(androidId, androidId, Constants.LOCALHOST + ":" + Constants.RECV_PORT);
 		
 		searchForNeighbors(root);
 		
@@ -71,12 +72,15 @@ public class MainActivity extends Activity {
 
 		this.setTitle(this.getTitle() + " (" + root.getName() + ")");
 
+		// Create the route table 
+		RouteTable routeTable = new RouteTable();
+		
 		// Start the sender 
-		sender = new Sender(root);
+		sender = new Sender(root, routeTable);
 		new Thread(sender).start();
 
 		// Start the receiver 
-		new Thread(new Reciever(root, new Handler(), text)).start();
+		new Thread(new Reciever(root, routeTable, sender, new Handler(), text)).start();
 	}
 	
 
@@ -165,11 +169,12 @@ public class MainActivity extends Activity {
 	public void onClick(View view) {
 		EditText et = (EditText) findViewById(R.id.EditText01);
 		String str = et.getText().toString();
-		text.setText(text.getText().toString() + " Me : " + str + "\n");
+		//text.setText(text.getText().toString() + "Me : " + str + "\n");
+		this.addMessage("Me : " + str);
 		System.out.println("Sending message = " + str);
 
 		for (MeshNode mn : root.getNeighbors().values()) {
-			String srcAddr = Constants.LOCALHOST;
+			String srcAddr = root.getIpPort();
 			String destAddr = Constants.LOCALHOST + ":" + mn.getPort(); 
 			this.sender.queuePacket(new DataPacket(srcAddr,destAddr, root.getName() + " : "+ str));
 		}
@@ -177,6 +182,23 @@ public class MainActivity extends Activity {
 		//new Thread(new TcpSender(Constants.LOCALHOST,DEST_PORT,str)).start();
 	}
 
+	// function to append a string to a TextView as a new line
+	// and scroll to the bottom if needed
+	private void addMessage(String msg) {
+	    // append the new string
+	    text.append(msg + "\n");
+	    // find the amount we need to scroll.  This works by
+	    // asking the TextView's internal layout for the position
+	    // of the final line and then subtracting the TextView's height
+	    final int scrollAmount = text.getLayout().getLineTop(text.getLineCount()) - text.getHeight();
+	    // if there is no need to scroll, scrollAmount will be <=0
+	    if (scrollAmount > 0)
+	    	text.scrollTo(0, scrollAmount);
+	    else
+	    	text.scrollTo(0, 0);
+	}
+	
+	
 	@Override
 	public boolean onCreateOptionsMenu(Menu menu) {
 		// Inflate the menu; this adds items to the action bar if it is present.

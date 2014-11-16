@@ -28,8 +28,7 @@ public class MeshNode {
 		this.port = Integer.parseInt(ipports[1]);
 		this.neighbors = new HashMap<String, MeshNode>();
 	}
-	
-	
+
 	public String getIp(){
 		return ip;
 	}
@@ -44,6 +43,10 @@ public class MeshNode {
 	
 	public int getPort() {
 		return port;
+	}
+	
+	public String getIpPort() {
+		return this.ip + ":" + this.port;
 	}
 	
 	public HashMap<String, MeshNode> getNeighbors() {
